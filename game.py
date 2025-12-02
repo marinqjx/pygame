@@ -234,6 +234,74 @@ while run:
     screen.blit(rooms[current_room]["bg"], (0, 0))
     screen.blit(quest_button, (quest_button_x, quest_button_y))
 
+    #ball
+    ball_img = pygame.image.load("ball.png").convert_alpha()
+ball_img = pygame.transform.smoothscale(ball_img, (20, 20))
+ball_speed = 10
+balls = []  # Liste für Ballprojektil
+
+...
+
+if event.key == pygame.K_e:  # Spieler hebt Item auf
+    to_pick = None
+    for i, item in enumerate(dropped_items):
+        if player_rect.colliderect(item['rect']):
+            to_pick = i
+            break
+    if to_pick is not None:
+        free_slot = None
+        for idx, slot in enumerate(inventory):
+            if slot is None:
+                free_slot = idx
+                break
+        if free_slot is not None:
+            item_type = dropped_items[to_pick]['type']
+            inventory[free_slot] = item_type
+            if item_type == 1:  # Falls Cactusfruit
+                print("Cactusfruit aufgesammelt!")
+                for ball_slot in range(len(inventory)):
+                    if inventory[ball_slot] is None:  # Freier Slot für Ball
+                        inventory[ball_slot] = 2
+                        print("Ein Ball wurde ins Inventar gelegt!")
+                        break
+            dropped_items.pop(to_pick)
+        else:
+            print("Inventar ist voll!")
+
+...
+
+if event.key == pygame.K_z and len(knives) < max_knives:
+    if inventory[equipped_index] == 0:  # Messer werfen
+        k_rect = knife_img.get_rect(center=player_rect.center)
+        vx = knife_speed if facing == "right" else -knife_speed
+        knives.append({'rect': k_rect, 'vx': vx})
+    elif inventory[equipped_index] == 2:  # Ball werfen
+        b_rect = ball_img.get_rect(center=player_rect.center)
+        vx = ball_speed if facing == "right" else -ball_speed
+        balls.append({'rect': b_rect, 'vx': vx})
+
+...
+
+# Ballbewegung und Kollision
+for ball in balls[:]:
+    ball['rect'].x += ball['vx']
+    if ball['rect'].right < 0 or ball['rect'].left > width:
+        balls.remove(ball)
+        continue
+    if lala_alive and ball['rect'].colliderect(lala_rect):
+        lala_lives = max(0, lala_lives - 2)
+        balls.remove(ball)
+        continue
+    if scorpion_active and ball['rect'].colliderect(scorpion_rect):
+        scorpion_lives = max(0, scorpion_lives - 3)
+        balls.remove(ball)
+        if scorpion_lives <= 0:
+            scorpion_active = False
+
+# Rendern der Bälle
+for ball in balls:
+    screen.blit(ball_img, ball['rect'])
+
     #reihenfolge (game states)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
